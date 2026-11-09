@@ -1,0 +1,45 @@
+name: seal-build
+on:
+  workflow_dispatch:
+    inputs:
+      test-filter:
+        description: "Optional tape test file glob for the Node 22 test job (empty = full suite)"
+        required: false
+        default: ""
+jobs:
+  test-node22:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install devDependencies
+        run: npm install --no-save --no-package-lock
+      - name: Test (tape)
+        run: |
+          if [ -n "${{ inputs.test-filter }}" ]; then
+            npx tape ${{ inputs.test-filter }}
+          else
+            npm test
+          fi
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '0.10'
+      - name: Pack
+        run: |
+          node --version
+          npm --version
+          rm -rf .github
+          npm pack
+          ls -la traverse-0.6.6.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: traverse-0.6.6
+          path: traverse-0.6.6.tgz
